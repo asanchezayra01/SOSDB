@@ -16,32 +16,30 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `request_types`
+-- Table structure for table `attendance`
 --
 
-DROP TABLE IF EXISTS `request_types`;
+DROP TABLE IF EXISTS `attendance`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `request_types` (
-  `request_type_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(20) NOT NULL,
-  `description` varchar(50) DEFAULT NULL,
-  `privilege_required` bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (`request_type_id`),
-  UNIQUE KEY `name` (`name`),
-  KEY `privelege_idx` (`privilege_required`),
-  CONSTRAINT `privelege` FOREIGN KEY (`privilege_required`) REFERENCES `privileges` (`privilege_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `attendance` (
+  `user_id` bigint(20) unsigned NOT NULL,
+  `event_id` bigint(20) unsigned NOT NULL,
+  `date_attended` datetime DEFAULT NULL,
+  KEY `user_id` (`user_id`),
+  KEY `event_id` (`event_id`),
+  CONSTRAINT `attendance_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
+  CONSTRAINT `attendance_ibfk_2` FOREIGN KEY (`event_id`) REFERENCES `events` (`event_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `request_types`
+-- Dumping data for table `attendance`
 --
 
-LOCK TABLES `request_types` WRITE;
-/*!40000 ALTER TABLE `request_types` DISABLE KEYS */;
-INSERT INTO `request_types` VALUES (1,'LOGIN','User request to log in.',6),(2,'LOGOUT','User request to log out.',6),(3,'CANCEL_EVENT','Organizer request to cancel event',3),(4,'CREATE_EVENT','Organizer request to create an event.',3),(5,'GRANT_ORGANIZER','Organizer request to grant organizer role',5),(6,'CREATE_ORGANIZATION','User request to create an organization',6),(7,'REGISTRATION','User request to create an SOS account',6),(8,'EDIT_PROFILE','User request to edit their profile',6),(9,'LOCATING_EVENT','User request to enable gps services',6),(10,'ATTEND_EVENT','Member request to attend an event',6);
-/*!40000 ALTER TABLE `request_types` ENABLE KEYS */;
+LOCK TABLES `attendance` WRITE;
+/*!40000 ALTER TABLE `attendance` DISABLE KEYS */;
+/*!40000 ALTER TABLE `attendance` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
