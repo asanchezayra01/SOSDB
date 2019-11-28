@@ -24,15 +24,19 @@ DROP TABLE IF EXISTS `roles`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `roles` (
   `role_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `role_name` varchar(20) NOT NULL,
-  `organization_id` bigint(20) unsigned NOT NULL,
-  `user_id` bigint(20) unsigned NOT NULL,
+  `owned_by` bigint(20) unsigned NOT NULL,
+  `belongs_to` bigint(20) unsigned NOT NULL,
+  `privileges` bigint(20) unsigned NOT NULL,
+  `role_name` varchar(45) NOT NULL,
+  PRIMARY KEY (`role_id`),
   UNIQUE KEY `role_id` (`role_id`),
-  KEY `organization_id_idx` (`organization_id`),
-  KEY `owns_idx` (`user_id`),
-  CONSTRAINT `organization` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`organization_id`),
-  CONSTRAINT `owns` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `privileges` (`privileges`),
+  KEY `belongs_to` (`belongs_to`),
+  KEY `owned_by` (`owned_by`),
+  CONSTRAINT `roles_ibfk_1` FOREIGN KEY (`privileges`) REFERENCES `role_privileges` (`role_privilege_id`),
+  CONSTRAINT `roles_ibfk_2` FOREIGN KEY (`belongs_to`) REFERENCES `organizations` (`organization_id`),
+  CONSTRAINT `roles_ibfk_3` FOREIGN KEY (`owned_by`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -41,6 +45,7 @@ CREATE TABLE `roles` (
 
 LOCK TABLES `roles` WRITE;
 /*!40000 ALTER TABLE `roles` DISABLE KEYS */;
+INSERT INTO `roles` VALUES (1,5,1,1,'Leader');
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -53,4 +58,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-11-21 15:19:35
+-- Dump completed on 2019-11-28  0:15:49

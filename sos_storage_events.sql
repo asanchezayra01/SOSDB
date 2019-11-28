@@ -24,7 +24,6 @@ DROP TABLE IF EXISTS `events`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `events` (
   `event_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `location` int(11) NOT NULL,
   `description` varchar(50) NOT NULL,
   `date` date NOT NULL,
   `is_cancelled` tinyint(1) NOT NULL,
@@ -33,13 +32,15 @@ CREATE TABLE `events` (
   `name` varchar(50) NOT NULL,
   `event_type` bigint(20) unsigned NOT NULL,
   `hosted_by` bigint(20) unsigned NOT NULL,
+  `lat_coordinate` double NOT NULL,
+  `long_coordinate` double NOT NULL,
   PRIMARY KEY (`event_id`),
   UNIQUE KEY `event_id` (`event_id`),
   KEY `event_type_id_idx` (`event_type`),
   KEY `organization_id_idx` (`hosted_by`),
   CONSTRAINT `event_type_id` FOREIGN KEY (`event_type`) REFERENCES `event_types` (`event_type_id`),
   CONSTRAINT `organization_id` FOREIGN KEY (`hosted_by`) REFERENCES `organizations` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -48,6 +49,7 @@ CREATE TABLE `events` (
 
 LOCK TABLES `events` WRITE;
 /*!40000 ALTER TABLE `events` DISABLE KEYS */;
+INSERT INTO `events` VALUES (6,'Come to fish and relax','2019-11-30',1,1,'12:00:01','Fishing',1,1,10.34,21.31),(7,'Come to fish and relax','2019-11-30',0,1,'00:00:01','Fishing',1,1,10.34,21.31),(8,'Testing','2019-10-30',0,1,'13:00:00','Fishing',1,1,200,300);
 /*!40000 ALTER TABLE `events` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -60,4 +62,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-11-21 15:19:36
+-- Dump completed on 2019-11-28  0:15:50

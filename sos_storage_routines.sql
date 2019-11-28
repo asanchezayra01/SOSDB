@@ -28,10 +28,26 @@
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `add_new_role`(IN role_name varchar(20), IN organization_id bigint unsigned, IN user_id bigint unsigned)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_new_role`(IN role_name varchar(20), IN organization_id int, IN user_id int, IN kick BOOLEAN, IN invite BOOLEAN,
+															IN event_manager boolean, IN role_manager boolean, IN promote boolean)
 BEGIN
-	INSERT roles (role_name, organization_id, user_id)
-    VALUES (role_name, organization_id, user_id);
+	
+    IF ( EXISTS ( SELECT * FROM members WHERE members.user_id = user_id and members.organization_id = organization_id ) )
+    THEN
+    
+	INSERT roles (role_name, belongs_to, owned_by, privileges)
+    VALUES (role_name, organization_id, user_id, (SELECT role_privilege_id FROM role_privileges WHERE kick= role_privileges.KICK and 
+																									  invite= role_privileges.INVITE and 
+																									  event_manager = role_privileges.MANAGE_EVENTS and
+                                                                                                      role_manager = role_privileges.MANAGE_ROLES
+                                                                                                      and promote = role_privileges.PROMOTE));
+	
+    ELSE
+	
+		SIGNAL SQLSTATE '02000'
+			SET MESSAGE_TEXT = 'The user cannot recieve this role because they are not part of the organization.';
+    
+    END IF;
 	
 
 END ;;
@@ -50,11 +66,11 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `cancel_event`(IN event_id bigint, IN user_id bigint)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `cancel_event`(IN chosen_event bigint)
 BEGIN
-	UPDATE event
-    set is_cancelled = false
-    WHERE event_id = event_id;
+	UPDATE events
+    set is_cancelled = true
+    WHERE event_id = chosen_event;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -71,12 +87,12 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `event_create`( IN name varchar(50), IN location int(11), IN description varchar(50), IN visibility boolean, IN time time, 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `event_create`( IN name varchar(50), IN lat_coordinate double, IN long_coordinate double, IN description varchar(50), IN visibility boolean, IN time time, 
 IN date date, IN event_type bigint, IN hosted_by bigint)
 BEGIN
 
-	INSERT events (name, location, description, visibility, time, date, event_type, hosted_by)
-    VALUES (name, location, description, visibility, boolean, time, date, event_type, hosted_by);
+	INSERT events (name, lat_coordinate, long_coordinate, description, visibility, time, date, event_type, hosted_by, is_cancelled)
+    VALUES (name, lat_coordinate, long_coordinate, description, visibility, time, date, event_type, hosted_by, false);
 
 END ;;
 DELIMITER ;
@@ -94,9 +110,36 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `filter_events_by_location`(IN location point)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `filter_events_by_location`(IN lat_coord double, IN long_coord double)
 BEGIN
 
+	SELECT *
+    FROM events
+    WHERE 0.5 > (events.lat_coordinate - lat_coord) and 0.5 > events.long_coordinate - long_coord and is_cancelled = false;
+
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `get_all_organizations` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_all_organizations`()
+BEGIN
+
+	SELECT *
+    FROM organizations
+    WHERE privacy = 'PUBLIC';
 
 END ;;
 DELIMITER ;
@@ -119,9 +162,103 @@ BEGIN
 
 	SELECT *
     FROM events
-    WHERE (SELECT CURRENT_DATE()) < events.date;
+    WHERE (SELECT CURRENT_DATE()) < events.date and is_cancelled = false;
 
 
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `get_event_details` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_event_details`(IN chosen_event int)
+BEGIN
+
+	SELECT *
+    FROM events
+    WHERE event_id = chosen_event;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `get_organizations_for_user` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_organizations_for_user`(IN user_id INT)
+BEGIN
+
+	SELECT organizations.organization_id,  organizations.name, description, privacy, requirements
+	FROM organizations join members on organizations.organization_id = members.member_id
+    WHERE members.user_id = user_id;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `get_organization_details` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_organization_details`(IN organization_id int)
+BEGIN
+	SELECT * 
+    FROM organizations
+    where organizations.organization_id = organization_id;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `join_organization` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `join_organization`(IN user_id INT, IN organization_id INT)
+BEGIN
+	IF ( EXISTS( SELECT * FROM members where members.user_id = user_id and members.organization_id = organization_id ) )
+    THEN
+		SIGNAL SQLSTATE '02000'
+		   SET MESSAGE_TEXT = 'user is already part of the organization.';
+    ELSE
+	INSERT members(user_id, organization_id)
+    VALUES (user_id, organization_id);
+
+	END IF;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -138,13 +275,16 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `organization_create`(IN name varchar(20), IN description varchar(50), IN privacy varchar(10), IN requirements varchar(10), IN user_id bigint)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `organization_create`(IN name varchar(20), IN description varchar(50), IN privacy varchar(10), IN requirements TINYTEXT, IN user_id bigint)
 BEGIN
      INSERT organizations(name, description, privacy, requirements)
      VALUES (name, description, privacy, requirements);
      
-     INSERT roles (role_name, organization_id, user_id)
-     VALUES ('Leader', (SELECT organization_id FROM organizations WHERE name = name and description = description and privacy = privacy and requirements = requirements ORDER BY organization_id desc), user_id);
+     INSERT roles (role_name, organization_id, user_id, privileges)
+     VALUES ('Leader', (SELECT organization_id FROM organizations WHERE name = name and description = description and privacy = privacy and requirements = requirements ORDER BY organization_id desc), user_id, 32);
+     
+     INSERT members (user_id, organization_id)
+     VALUES (user_id, (SELECT organization_id FROM organizations WHERE name = name and description = description and privacy = privacy and requirements = requirements ORDER BY organization_id desc) );
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -185,6 +325,29 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `request_log_logout`(IN request_mess
 BEGIN
      INSERT requests(request_message, request_status, request_type)
      VALUES (request_message, request_status, (SELECT request_type_id FROM request_types WHERE name like 'LOGOUT'));
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `retrieve_user_details` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `retrieve_user_details`(IN user_id INT)
+BEGIN
+
+	SELECT *
+    FROM users
+    Where users.user_id = user_id;
+
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -265,22 +428,24 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `user_verify_login`(IN email varchar(50), IN password varchar(20), OUT confirmation boolean )
+CREATE DEFINER=`root`@`localhost` PROCEDURE `user_verify_login`(IN email varchar(50), IN password varchar(20), OUT confirmation boolean)
 BEGIN
 
-     IF (EXISTS (SELECT *
-     FROM users
-     WHERE users.email = email AND users.password = password))
-     
-     THEN
-		SET confirmation = 1;
-        CALL request_log_login((SELECT concat(email,' has successfully logged into SOS')),'SUCCESS');
-	 ELSE
-        SET confirmation = 0;
-        CALL request_log_login((SELECT concat(email,' has failed to log into SOS')), 'DENIED');
-        
-	 END IF;
-     
+	 IF (exists(
+		SELECT *
+        FROM users
+        WHERE users.email = email and users.password = password))
+        THEN
+			SET confirmation = true;
+			CALL request_log_login((SELECT concat(email,' has successfully logged into SOS')),'SUCCESS');
+	    ELSE
+			SET confirmation = 0;
+			CALL request_log_login((SELECT concat(email,' has failed to log into SOS')), 'DENIED');
+        END IF;
+    
+    
+
+
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -297,4 +462,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-11-21 15:19:36
+-- Dump completed on 2019-11-28  0:15:50

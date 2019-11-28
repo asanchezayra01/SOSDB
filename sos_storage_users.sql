@@ -33,7 +33,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `user_id` (`user_id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `user_name_UNIQUE` (`user_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -42,7 +42,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (2,'password123','jdoe001@fiu.edu','John','jdoe001','PUBLIC'),(5,'testing','jdoe002@fiu.edu','John','jdoe002','PUBLIC');
+INSERT INTO `users` VALUES (2,'password123','jdoe001@fiu.edu','John','jdoe001','PUBLIC'),(5,'testing','jdoe002@fiu.edu','John','jdoe002','PUBLIC'),(8,'toor','at@toor.com','Armando','arm','PUBLIC');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -55,4 +55,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-11-21 15:19:34
+-- Dump completed on 2019-11-28  0:15:49
